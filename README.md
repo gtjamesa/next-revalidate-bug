@@ -16,6 +16,10 @@ $ rm -rf .next/cache/fetch-cache; watch -n1 stat .next/cache/fetch-cache/*
 $ while true; do curl -s http://127.0.0.1:3000 | grep -oP '<p>Server time: .*?</p>' --color=none; sleep 5; done
 ```
 
+[![asciicast](https://asciinema.org/a/f4WejhhKNjaRw8aI7lG1SUxAe.svg)](https://asciinema.org/a/f4WejhhKNjaRw8aI7lG1SUxAe)
+
+## Cache contents
+
 ```bash
 $ cat .next/cache/fetch-cache/*
 ```
