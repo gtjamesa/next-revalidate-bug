@@ -1,36 +1,65 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Next Revalidate Bug
 
-## Getting Started
-
-First, run the development server:
+Reproduction for `file-system-cache` revalidate not working when paired with `isrMemoryCacheSize: 0`. 
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# 1. Start app
+$ pnpm dev
+
+# 2. (optional) Perform a first request to compile
+$ curl -s http://127.0.0.1:3000
+
+# 3. In another terminal, remove `fetch-cache` and watch files for date changes
+$ rm -rf .next/cache/fetch-cache; watch -n1 stat .next/cache/fetch-cache/*
+
+# 4. Send requests to server
+$ while true; do curl -s http://127.0.0.1:3000 | grep -oP '<p>Server time: .*?</p>' --color=none; sleep 5; done
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+```bash
+$ cat .next/cache/fetch-cache/*
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+**Cache file via `fetch()`:**
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+```json
+{
+  "kind": "FETCH",
+  "data": {
+    "headers": {
+      "connection": "keep-alive",
+      "content-encoding": "br",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Wed, 15 Nov 2023 16:37:06 GMT",
+      "server": "nginx/1.18.0 (Ubuntu)",
+      "transfer-encoding": "chunked",
+      "vary": "Accept-Encoding"
+    },
+    "body": "eyJ5ZWFyIjoyMDIzLCJtb250aCI6MTEsImRheSI6MTUsImhvdXIiOjE2LCJtaW51dGUiOjM3LCJzZWNvbmRzIjo2LCJtaWxsaVNlY29uZHMiOjI3MSwiZGF0ZVRpbWUiOiIyMDIzLTExLTE1VDE2OjM3OjA2LjI3MTgwMzUiLCJkYXRlIjoiMTEvMTUvMjAyMyIsInRpbWUiOiIxNjozNyIsInRpbWVab25lIjoiVVRDIiwiZGF5T2ZXZWVrIjoiV2VkbmVzZGF5IiwiZHN0QWN0aXZlIjpmYWxzZX0=",
+    "status": 200,
+    "url": "https://timeapi.io/api/Time/current/zone?timeZone=UTC"
+  },
+  "revalidate": 30,
+  "tags": [
+    "time-with-fetch"
+  ]
+}
+```
 
-## Learn More
+**Cache file via `unstable_cache()`:**
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+```json
+{
+  "kind": "FETCH",
+  "data": {
+    "headers": {},
+    "body": "{\"year\":2023,\"month\":11,\"day\":15,\"hour\":16,\"minute\":37,\"seconds\":6,\"milliSeconds\":301,\"dateTime\":\"2023-11-15T16:37:06.3014833\",\"date\":\"11/15/2023\",\"time\":\"16:37\",\"timeZone\":\"UTC\",\"dayOfWeek\":\"Wednesday\",\"dstActive\":false}",
+    "status": 200,
+    "url": ""
+  },
+  "revalidate": 30,
+  "tags": [
+    "time-with-unstable-cache"
+  ]
+}
+```
